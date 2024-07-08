@@ -1,7 +1,7 @@
 # Standard
 from typing import Any, Callable, Dict, Type
 # Internal
-from core import ErrorType, ValidecorError, Validator
+from .core import ErrorType, ValidecorError, Validator
 
 class Between(Validator):
     """
