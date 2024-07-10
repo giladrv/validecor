@@ -71,11 +71,15 @@ class Map(ExtendedValidator):
             if self.annotated_name not in target_map: # no default value
                 raise Exception(f'Failed map node #{i}: {repx(node)}', e)
     def __desc__(self):
-        return 'Argument must be mapped from: ' + '.'.join(repx(node) for node in self.nodes)
-    def __init__(self, *nodes: int | str | Callable):
+        return f'Argument must be mapped from: {self.format_nodes()}'
+    def __init__(self, *nodes: int | str | Callable, hidden: int = 0):
         self.nodes = nodes
+        self.hidden = hidden
     def __repr__(self):
-        return f'Map({ ",".join(repx(node) for node in self.nodes) })'
+        return f'Map({self.format_nodes()})'
+    def format_nodes(self):
+        return ",".join(repx(node) for i, node in enumerate(self.nodes) if i >= self.hidden)
+
 
 def repx(obj):
     if callable(obj):

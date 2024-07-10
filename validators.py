@@ -1,7 +1,8 @@
 # Standard
+import json
 from typing import Any, Callable, Type
 # Internal
-from .core import Validator, repx
+from .core import Map, Validator, repx
 
 class Between(Validator):
     """
@@ -49,18 +50,18 @@ class IsType(Validator):
     """
     Ensure the argument type matches the target type.
     """
-    def __init__(self, target_type: Type):
-        self.target_type = target_type
+    def __init__(self, *target_types: tuple[Type]):
+        self.target_types = target_types
     def __call__(self, arg):
         arg_type = type(arg)
-        if arg_type is not self.target_type:
+        if arg_type not in self.target_types:
             raise TypeError(f'Invalid type: {arg_type.__name__}')
     def __desc__(self):
-        return f'Argument must be of type: {self.target_type.__name__}'
+        return f'Argument must be of type: {self.format_types()}'
     def __repr__(self):
-        name = type(self).__name__
-        details = self.target_type.__name__
-        return f'{name}({details})'
+        return f'{type(self).__name__}({self.format_types()})'
+    def format_types(self):
+        return ','.join(tt.__name__ for tt in self.target_types)
 
 class IsTypable(Validator):
     """
@@ -72,10 +73,14 @@ class IsTypable(Validator):
         except Exception as e:
             raise TypeError(f'Incompatible type: {type(arg).__name__}', e)
     def __desc__(self):
-        return f'Argument must be convertible to type `{self.target_type.__name__}`'
+        return f'Argument must be convertible to type: {self.target_type.__name__}'
     def __init__(self, target_type: Type):
         self.target_type = target_type
     def __repr__(self):
         name = type(self).__name__
         details = self.target_type.__name__
         return f'{name}({details})'
+
+class MapAwsLambdaEventApiGateway(Map):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('event', 'body', json.loads, *nodes, hidden = 3)
