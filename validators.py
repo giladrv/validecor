@@ -1,7 +1,7 @@
 # Standard
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Type
 # Internal
-from .core import ErrorType, ValidecorError, Validator
+from .core import Validator, repx
 
 class Between(Validator):
     """
@@ -10,26 +10,16 @@ class Between(Validator):
     def __init__(self, lo, hi):
         self.lo = lo
         self.hi = hi
-    def __call__(self, 
-            arg_name: str,
-            arg_type: Type,
-            _,
-            target_map: Dict[str, Any]):
+    def __call__(self, arg):
         try:
-            arg = target_map[arg_name]
             if arg < self.lo or self.hi < arg:
-                raise ValidecorError(ErrorType.ArgVal,
-                    arg_name = arg_name,
-                    arg_type = arg_type,
-                    validator = self)
-        except ValidecorError as e:
-            raise e
+                raise ValueError(f'Invalid value: {arg}')
+        except ValueError:
+            raise
         except Exception as e:
-            raise ValidecorError(ErrorType.ArgVal,
-                arg_name = arg_name,
-                arg_type = arg_type,
-                validator = self,
-                sub_error = e)
+            raise ValueError(f'Uncomparable value: {arg}', e)
+    def __desc__(self):
+        return f'Argument must be between {repr(self.lo)} and {repr(self.hi)} (inclusive)'
     def __repr__(self):
         name = type(self).__name__
         details = f'{repr(self.lo)},{repr(self.hi)}'
@@ -38,77 +28,54 @@ class Between(Validator):
 class Custom(Validator):
     """
     Execute a simple custom validator.
+
+    `validator(arg):` raise an exception with the first argument
+        being a message for the end-user, and optionally debugging message
+        in the second argument.
     """
+    def __call__(self, arg):
+        self.validator(arg)
+    def __desc__(self):
+        desc = f'Argument must not fail `{self.validator.__name__}`'
+        if self.validator.__doc__ is not None:
+            desc += ':\n' + self.validator.__doc__
+        return desc
     def __init__(self, validator: Callable[[Any], None]):
         self.validator = validator
-    def __call__(self, 
-            arg_name: str,
-            arg_type: Type,
-            _,
-            target_map: Dict[str, Any]):
-        try:
-            arg = target_map[arg_name]
-            self.validator(arg)
-        except Exception as e:
-            raise ValidecorError(ErrorType.ArgVal,
-                arg_name = arg_name,
-                arg_type = arg_type,
-                validator = self,
-                sub_error = e)
     def __repr__(self):
-        name = type(self).__name__
-        details = f'{repr(self.validator)}'
-        return f'{name}({details})'
+        return f'{type(self).__name__}({repx(self.validator)})'
 
 class IsType(Validator):
     """
-    Ensure the argument type matches the defined (or override) type.
+    Ensure the argument type matches the target type.
     """
-    def __init__(self, type_override: Type = None):
-        self.type_override = type_override
-    def __call__(self, 
-            arg_name: str,
-            arg_type: Type,
-            _,
-            target_map: Dict[str, Any]):
-        arg = target_map[arg_name]
-        actual_type = type(arg)
-        if self.type_override is not None:
-            arg_type = self.type_override
-        if actual_type is not arg_type:
-            raise ValidecorError(ErrorType.ArgVal,
-                actual_type = actual_type,
-                arg_name = arg_name,
-                arg_type = arg_type,
-                validator = self)
+    def __init__(self, target_type: Type):
+        self.target_type = target_type
+    def __call__(self, arg):
+        arg_type = type(arg)
+        if arg_type is not self.target_type:
+            raise TypeError(f'Invalid type: {arg_type.__name__}')
+    def __desc__(self):
+        return f'Argument must be of type: {self.target_type.__name__}'
     def __repr__(self):
         name = type(self).__name__
-        details = '' if self.type_override is None else self.type_override.__name__
+        details = self.target_type.__name__
         return f'{name}({details})'
 
 class IsTypable(Validator):
     """
-    Ensure the argument type matches the defined (or override) type.
+    Ensure the argument type can be converted to the target type.
     """
-    def __init__(self, type_override: Type = None):
-        self.type_override = type_override
-    def __call__(self, 
-            arg_name: str,
-            arg_type: Type,
-            _,
-            target_map: Dict[str, Any]):
+    def __call__(self, arg):
         try:
-            arg = target_map[arg_name]
-            if self.type_override is not None:
-                arg_type = self.type_override
-            target_map[arg_name] = arg_type(arg)
+            self.target_type(arg)
         except Exception as e:
-            raise ValidecorError(ErrorType.ArgVal,
-                arg_name = arg_name,
-                arg_type = arg_type,
-                validator = self,
-                sub_error = e)
+            raise TypeError(f'Incompatible type: {type(arg).__name__}', e)
+    def __desc__(self):
+        return f'Argument must be convertible to type `{self.target_type.__name__}`'
+    def __init__(self, target_type: Type):
+        self.target_type = target_type
     def __repr__(self):
         name = type(self).__name__
-        details = '' if self.type_override is None else self.type_override.__name__
+        details = self.target_type.__name__
         return f'{name}({details})'
