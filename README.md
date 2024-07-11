@@ -30,7 +30,6 @@ The `validecor` decorator accepts several parameters to customized its usage. On
 
     from typing import Annotated
     from validecor import Attr, Map, validecor
-    from validecor.validators import IsType
 
     # we define the source function signature
     def handler(event, context):
