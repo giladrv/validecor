@@ -50,14 +50,14 @@ class IsType(Validator):
     """
     Ensure the argument type matches the target type.
     """
-    def __init__(self, *target_types: tuple[Type]):
-        self.target_types = target_types
     def __call__(self, arg):
         arg_type = type(arg)
         if arg_type not in self.target_types:
             raise TypeError(f'Invalid type: {arg_type.__name__}')
     def __desc__(self):
         return f'Argument must be of type: {self.format_types()}'
+    def __init__(self, *target_types: tuple[Type]):
+        self.target_types = target_types
     def __repr__(self):
         return f'{type(self).__name__}({self.format_types()})'
     def format_types(self):
@@ -80,6 +80,22 @@ class IsTypable(Validator):
         name = type(self).__name__
         details = self.target_type.__name__
         return f'{name}({details})'
+
+class OneOf(Validator):
+    """
+    Ensure the argument is one of the target values.
+    """
+    def __init__(self, *target_values: tuple[Any]):
+        self.target_values = target_values
+    def __call__(self, arg):
+        if arg not in self.target_values:
+            raise TypeError(f'Invalid value: {arg}')
+    def __desc__(self):
+        return f'Argument must be one of: {self.format_values()}'
+    def __repr__(self):
+        return f'OneOf({self.format_values()})'
+    def format_values(self):
+        return ','.join(repr(tv) for tv in self.target_values)
 
 class MapAwsLambdaEventApiGateway(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
