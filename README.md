@@ -57,29 +57,29 @@ This way we only get the arguments relevant for the function operation, with hel
 
 Maps will be cached internally so as not to reapeat potentially expensive operations.
 
-#### Callback Hooks
+### Callback Hooks
 
 The `validecor` decorator supports the following hooks:
 
-##### Initialization And Logging
+#### Initialization And Logging
 
     pre_hook: Callable[[*source_args, **source_kwargs], Any] = default_log_hook
     
 This hook is called with the same arguments as the original function. Can be used for logging or halting the rest of the function execution by returning any `not None` value, which is then returned to the original caller. By default no action is performed.
 
-##### Validation Handling
+#### Validation Handling
 
     val_hook: Callable[[Exception, Validator | ExtendedValidator], Any] = default_val_hook
 
 This hook is called upon validation errors (or Map failures). Use this to return a custom error message to the user. By default the exception is re-raised unchanged.
 
-##### Function Errors
+#### Function Errors
 
     err_hook: Callable[[Exception, *target_args, **target_kwargs], Any] = default_err_hook
 
 This hook is called when an exception is raised within the function body. The return value of the hook is the final value returned to the original caller. By default the exception is re-raised unchanged.
 
-##### Post-Processing
+#### Post-Processing
 
     map_hook: Callable[[Any], Any] = default_map_hook
 
