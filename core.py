@@ -80,7 +80,6 @@ class Map(ExtendedValidator):
     def format_nodes(self):
         return ",".join(repx(node) for i, node in enumerate(self.nodes) if i >= self.hidden)
 
-
 def repx(obj):
     if callable(obj):
         return obj.__name__ if hasattr(obj, '__name__') else type(obj).__name__
