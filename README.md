@@ -2,13 +2,13 @@
 
 ValiDecor is a Python library designed to facilitate robust input validation using its core decorator `validecor`. It leverages Python's type annotation system to provide a seamless and intuitive interface for enforcing input constraints directly in function signatures using the special annotation type `typing.Annotated`.
 
-Validecor was designed with special attention for its potential use on AWS Lambda functions. AWS Lambda handlers expect a fixed signature, i.e. `handler(event, context)`. This signature is uninformative and hinders code development.
+ValiDecor was designed with special attention for its potential use on AWS Lambda functions. AWS Lambda handlers expect a fixed signature, i.e. `handler(event, context)`. This signature is uninformative and hinders code development.
 
 ## Installation (not implement yet)
 
 Install ValiDecor via pip:
 
-    pip install validecor
+    pip install ValiDecor
 
 ## Usage
 
