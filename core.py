@@ -10,6 +10,7 @@ class Validator(ABC):
     """
     annotated_name: str
     annotated_type: Type
+    cache: Dict[tuple, Any]
     @abstractmethod
     def __desc__(self) -> str:
         pass
@@ -66,8 +67,11 @@ class Map(ExtendedValidator):
             target_map: Dict[str, Any]):
         try:
             arg = source_map
+            nodes = tuple()
             for i, node in enumerate(self.nodes):
-                arg = node(arg) if callable(node) else arg[node]
+                nodes += (node, )
+                arg = self.cache.get(nodes, node(arg) if callable(node) else arg[node])
+                self.cache[nodes] = arg
             target_map[self.annotated_name] = arg
         except Exception as e:
             if self.annotated_name not in target_map: # no default value
@@ -168,6 +172,7 @@ def validecor(
         def wrapper(*source_args, **source_kwargs):
             if (res := pre_hook(*source_args, **source_kwargs)) is not CONTINUE:
                 return res
+            cache = {}
             source_map = get_arg_map(source_spec or target_spec, source_args, source_kwargs)
             target_map = get_arg_def(target_spec) if source_fun is not None else source_map
             for annotated_name, annotation in target_spec.annotations.items():
@@ -178,6 +183,7 @@ def validecor(
                             raise Exception('Invalid annotation - only ValiDecor instances are allowed')
                         validator.annotated_name = annotated_name
                         validator.annotated_type = annotated_type
+                        validator.cache = cache
                         try:
                             if isinstance(validator, SimpleValidator):
                                 validator(target_map[annotated_name])
