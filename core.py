@@ -4,7 +4,7 @@ from functools import wraps
 from inspect import FullArgSpec, getfullargspec
 from typing import Annotated, Any, Callable, Dict, Type, get_origin
 
-class ValiDecor(ABC):
+class Validator(ABC):
     """
     Abstract Base Class for argument validators.
     """
@@ -20,7 +20,7 @@ class ValiDecor(ABC):
     def description(self) -> str:
         return self.__desc__()
 
-class ExtendedValidator(ValiDecor, ABC):
+class ExtendedValidator(Validator, ABC):
     @abstractmethod
     def __call__(self, 
             source_map: Dict[str, Any],
@@ -35,7 +35,7 @@ class ExtendedValidator(ValiDecor, ABC):
         """
         pass
 
-class Validator(ValiDecor, ABC):
+class SimpleValidator(Validator, ABC):
     @abstractmethod
     def __call__(self, arg):
         """
@@ -53,11 +53,13 @@ class Attr(str):
     def __init__(self, name: str):
         self.name = name
     def __repr__(self):
-        return f'Attr({repr(self.name)})'
+        return f'Attr({repx(self.name)})'
 
 class Map(ExtendedValidator):
     """
     Map arguments from a source function spec according to the defined nodes.
+    
+    @hidden - 
     """
     def __call__(self, 
             source_map: Dict[str, Any],
@@ -80,14 +82,16 @@ class Map(ExtendedValidator):
     def format_nodes(self):
         return ",".join(repx(node) for i, node in enumerate(self.nodes) if i >= self.hidden)
 
+CONTINUE = object()
+
 def repx(obj):
     if callable(obj):
         return obj.__name__ if hasattr(obj, '__name__') else type(obj).__name__
     return repr(obj)
 
-def default_log_hook(*__args__, **__kwargs__): pass
+def default_log_hook(*__args__, **__kwargs__): return CONTINUE
 
-def default_val_hook(__err__: Exception, __validecor__: ValiDecor): raise
+def default_val_hook(__err__: Exception, __validecor__: Validator): raise
 
 def default_err_hook(__err__: Exception, *__args__, **__kwargs__): raise
 
@@ -162,20 +166,20 @@ def validecor(
         target_spec = getfullargspec(target_fun)
         @wraps(target_fun)
         def wrapper(*source_args, **source_kwargs):
-            if (res := pre_hook(*source_args, **source_kwargs)) is not None:
+            if (res := pre_hook(*source_args, **source_kwargs)) is not CONTINUE:
                 return res
             source_map = get_arg_map(source_spec or target_spec, source_args, source_kwargs)
-            target_map = get_arg_def(target_spec)
+            target_map = get_arg_def(target_spec) if source_fun is not None else source_map
             for annotated_name, annotation in target_spec.annotations.items():
                 if get_origin(annotation) is Annotated:
                     annotated_type = annotation.__origin__
                     for validator in annotation.__metadata__:
-                        if not isinstance(validator, ValiDecor):
+                        if not isinstance(validator, Validator):
                             raise Exception('Invalid annotation - only ValiDecor instances are allowed')
                         validator.annotated_name = annotated_name
                         validator.annotated_type = annotated_type
                         try:
-                            if isinstance(validator, Validator):
+                            if isinstance(validator, SimpleValidator):
                                 validator(target_map[annotated_name])
                             elif isinstance(validator, ExtendedValidator):
                                 validator(source_map, target_map)
