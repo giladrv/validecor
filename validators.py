@@ -210,6 +210,28 @@ class GreaterThanOrEqual(SimpleValidator):
     def __repr__(self):
         return f'{type(self).__name__}({repx(self.lo)})'
 
+class ListOf(SimpleValidator):
+    """
+    Ensure the argument is a list with values selected from the target values.
+    """
+    def __init__(self, *target_values: tuple[Any]):
+        self.target_values = target_values
+    def __call__(self, arg):
+        try:
+            for value in arg:
+                if value not in self.target_values:
+                    raise ValueError(f'Invalid value: {value}')
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f'Invalid list: {arg}', e)
+    def __desc__(self):
+        return f'Must be a list with elements from: {self.format_values()}'
+    def __repr__(self):
+        return f'{type(self).__name__}({self.format_values()})'
+    def format_values(self):
+        return ','.join(repx(tv) for tv in self.target_values)
+
 class Not(SimpleValidator):
     """
     Check that the argument is not valid according to the target validator.
