@@ -304,7 +304,7 @@ class OneOf(SimpleValidator):
         self.target_values = target_values
     def __call__(self, arg):
         if arg not in self.target_values:
-            raise TypeError(f'Invalid value: {arg}')
+            raise ValueError(f'Invalid value: {arg}')
     def __desc__(self):
         return f'Argument must be one of: {self.format_values()}'
     def __repr__(self):
