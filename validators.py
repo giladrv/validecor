@@ -308,6 +308,10 @@ class Regex(SimpleValidator):
             details += ',' + repx(self.flags)
         return f'{type(self).__name__}({details})'
 
-class MapAwsLambdaEventApiGateway(Map):
+class MapApiGatewayBody(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'body', json.loads, *nodes, hidden = 3)
+
+class MapApiGatewayQuery(Map):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('event', 'queryStringParameters', *nodes, hidden = 2)
