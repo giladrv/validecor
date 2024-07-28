@@ -72,13 +72,16 @@ class IsType(SimpleValidator):
     Ensure the argument type matches the target type.
     """
     def __call__(self, arg):
+        if self.allow_none and arg is None:
+            return
         arg_type = type(arg)
         if arg_type not in self.target_types:
             raise TypeError(f'Invalid type: {arg_type.__name__}')
     def __desc__(self):
         return f'Argument must be of type: {self.format_types()}'
-    def __init__(self, *target_types: tuple[Type]):
+    def __init__(self, *target_types: tuple[Type], allow_none: bool = False):
         self.target_types = target_types
+        self.allow_none = allow_none
     def __repr__(self):
         return f'{type(self).__name__}({self.format_types()})'
     def format_types(self):
