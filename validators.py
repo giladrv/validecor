@@ -341,16 +341,6 @@ class MapApiGatewayClaims(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'requestContext', 'authorizer', 'claims', *nodes, hidden = 4)
 
-class MapApiGatewayClaimsEmail(MapApiGatewayClaims):
-    def __init__(self):
-        super().__init__('email')
-        self.hidden = 5
-
-class MapApiGatewayClaimsUsername(MapApiGatewayClaims):
-    def __init__(self):
-        super().__init__('cognito:username')
-        self.hidden = 5
-
 class MapApiGatewayQuery(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'queryStringParameters', *nodes, hidden = 2)
