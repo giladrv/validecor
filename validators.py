@@ -6,6 +6,8 @@ from typing import Any, Callable, Type
 # Internal
 from .core import Map, SimpleValidator, Validator, repx
 
+RX_UUID_V4 = r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}'
+
 class Between(SimpleValidator):
     """
     Check that the argument is between lo and hi (inclusive).
@@ -316,7 +318,7 @@ class Regex(SimpleValidator):
     """
     Ensure the argument matches the regex pattern.
     """
-    def __init__(self, pattern: str | Pattern[str], flags: int | RegexFlag = 0):
+    def __init__(self, pattern: str | Pattern[str], flags: int | RegexFlag = re.NOFLAG):
         self.pattern = pattern
         self.flags = flags
     def __call__(self, arg):
@@ -326,12 +328,21 @@ class Regex(SimpleValidator):
         except Exception as e:
             raise ValueError(f'Incompatible value: {arg}', e)
     def __desc__(self):
-        return f'Argument must match the regex pattern: {self.target_enum.__name__}'
+        return f'Argument must match the regex pattern: {self.pattern}'
     def __repr__(self):
         details = repx(self.pattern)
         if self.flags != 0:
             details += ',' + repx(self.flags)
         return f'{type(self).__name__}({details})'
+
+class UUIDv4(Regex):
+    """
+    Ensure the argument is a UUID v4 string.
+    """
+    def __init__(self, only_lowercase = True):
+        super().__init__(RX_UUID_V4, re.NOFLAG if only_lowercase else re.IGNORECASE)
+    def __desc__(self):
+        return f'Argument must be a valid UUID v4 string'
 
 class MapApiGatewayBody(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
