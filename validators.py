@@ -107,6 +107,27 @@ class IsTypable(SimpleValidator):
         details = self.target_type.__name__
         return f'{name}({details})'
 
+class IterAll(SimpleValidator):
+    """
+    Ensure all argument items are valid according to all specified validators.
+    """
+    def __init__(self, *validators: tuple[SimpleValidator]):
+        self.validators = validators
+    def __call__(self, arg):
+        try:
+            iter(arg)
+        except Exception as e:
+            raise TypeError(f'Not an iterable: {arg}', e)
+        for a in arg:
+            for validator in self.validators:
+                validator(a)
+    def __desc__(self):
+        return f'All argument items must satisfy all of: {self.format_values()}'
+    def __repr__(self):
+        return f'{type(self).__name__}({self.format_values()})'
+    def format_values(self):
+        return ','.join(repx(v) for v in self.validators)
+
 class LenBetween(SimpleValidator):
     """
     Check that the argument length is between lo and hi (inclusive).
