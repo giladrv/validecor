@@ -76,6 +76,8 @@ class IsType(SimpleValidator):
     def __call__(self, arg):
         if self.allow_none and arg is None:
             return
+        if len(self.target_types) == 0:
+            self.target_types = (self.annotated_type, )
         arg_type = type(arg)
         if arg_type not in self.target_types:
             raise TypeError(f'Invalid type: {arg_type.__name__}')
