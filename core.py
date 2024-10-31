@@ -11,6 +11,7 @@ class Validator(ABC):
     annotated_name: str
     annotated_type: Type
     cache: Dict[tuple, Any]
+    use_default = False
     @abstractmethod
     def __desc__(self) -> str:
         pass
@@ -76,6 +77,7 @@ class Map(ExtendedValidator):
         except Exception as e:
             if self.annotated_name not in target_map: # no default value
                 raise Exception(f'Failed map node #{i}: {repx(node)}', e)
+            self.use_default = True
     def __desc__(self):
         return f'Argument must be mapped from: {self.format_nodes()}'
     def __init__(self, *nodes: int | str | Callable, hidden: int = 0):
@@ -193,6 +195,8 @@ def validecor(
                                 pass
                         except Exception as e:
                             return val_hook(e, validator)
+                        if validator.use_default:
+                            break
             if source_spec is None:
                 target_args = source_args
                 target_kwargs = source_kwargs
