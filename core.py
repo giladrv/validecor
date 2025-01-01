@@ -73,7 +73,10 @@ class Map(ExtendedValidator):
                 nodes += (node, )
                 arg = self.cache.get(nodes, node(arg) if callable(node) else arg[node])
                 self.cache[nodes] = arg
-            target_map[self.annotated_name] = arg
+            if arg is None and self.annotated_name in target_map:
+                self.use_default = True
+            else:
+                target_map[self.annotated_name] = arg
         except Exception as e:
             if self.annotated_name not in target_map: # no default value
                 raise Exception(f'Failed map node #{i}: {repx(node)}', e)
