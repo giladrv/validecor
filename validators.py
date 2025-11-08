@@ -431,6 +431,10 @@ class MapApiGatewayClaims(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'requestContext', 'authorizer', 'claims', *nodes, hidden = 4)
 
+class MapApiGatewayHeaders(Map):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('event', 'headers', *nodes, hidden = 2)
+
 class MapApiGatewayPath(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'pathParameters', *nodes, hidden = 2)
