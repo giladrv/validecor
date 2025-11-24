@@ -442,3 +442,7 @@ class MapApiGatewayPath(Map):
 class MapApiGatewayQuery(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'queryStringParameters', *nodes, hidden = 2)
+
+class MapApiGatewayWebSocketAuth(Map):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('event', 'requestContext', 'authorizer', *nodes, hidden = 3)
