@@ -423,6 +423,39 @@ class UUIDv4(Regex):
     def __desc__(self):
         return f'Argument must be a valid UUID v4 string'
 
+class ValueOrRange(SimpleValidator):
+    """
+    Check that the argument is a value between lo and hi (inclusive),
+    or specifies a range between those boundaries.
+    """
+    def __call__(self, arg):
+        ta = type(arg)
+        if ta == self.tb:
+            if self.lo <= arg <= self.hi:
+                return
+            raise ValueError(f'Invalid value: {arg}')
+        if ta == list:
+            if len(arg) == 2 \
+                    and type(arg[0]) == type(arg[1]) == self.tb \
+                    and self.lo <= arg[0] <= arg[1] <= self.hi:
+                return
+            raise ValueError(f'Invalid range: {arg}')
+        raise TypeError('Invalid type')
+    def __desc__(self):
+        return f'Argument must be a value or a range between {repx(self.lo)} and {repx(self.hi)} (inclusive)'
+    def __init__(self, lo, hi):
+        if lo is None or hi is None or type(lo) != type(hi):
+            raise TypeError('Boundaries must be set with the same type')
+        if lo > hi:
+            raise ValueError('Boundary hi must not be smaller than lo')
+        self.lo = lo
+        self.hi = hi
+        self.tb = type(lo)
+    def __repr__(self):
+        name = type(self).__name__
+        details = f'{repx(self.lo)},{repx(self.hi)}'
+        return f'{name}({details})'
+
 class MapApiGatewayBody(Map):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
         super().__init__('event', 'body', json.loads, *nodes, hidden = 3)
