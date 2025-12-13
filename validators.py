@@ -414,6 +414,44 @@ class Regex(SimpleValidator):
             details += ',' + repx(self.flags)
         return f'{type(self).__name__}({details})'
 
+class SpanDict(SimpleValidator):
+    """
+    Check that the argument is a valid span dict - {lo:<lo>,hi:<hi>}.
+    """
+    def __call__(self, arg):
+        err = ValueError('Invalid span object')
+        try:
+            alv = arg[self.lk]
+            ahv = arg[self.hk]
+            if ahv < alv:
+                raise err
+            if self.lv is not None and self.lv > alv:
+                raise err
+            if self.hv is not None and self.hv < ahv:
+                raise err
+            return
+        except:
+            raise err
+    def __desc__(self):
+        cond = ""
+        if self.lv is not None:
+            cond += f"{self.lv} ≤ "
+        f"arg['{self.lk}'] ≤ arg['{self.hk}']"
+        if self.hv is not None:
+            cond += f" ≤ {self.hv}"
+        return f'Argument must be a dict that satisfies: {cond}'
+    def __init__(self, lo_val, hi_val, lo_key: str = 'lo', hi_key: str = 'hi'):
+        if lo_val is not None and hi_val is not None and lo_val > hi_val:
+            raise ValueError('Boundary hi_val must not be smaller than lo_val')
+        self.lv = lo_val
+        self.hv = hi_val
+        self.lk = lo_key
+        self.hk = hi_key
+    def __repr__(self):
+        name = type(self).__name__
+        details = f'{self.lk}={repx(self.lv)},{self.hk}={repx(self.hv)}'
+        return f'{name}({details})'
+
 class UUIDv4(Regex):
     """
     Ensure the argument is a UUID v4 string.
