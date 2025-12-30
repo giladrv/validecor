@@ -78,7 +78,7 @@ class Map(ExtendedValidator):
             else:
                 target_map[self.annotated_name] = arg
         except Exception as e:
-            if self.annotated_name not in target_map: # no default value
+            if self.annotated_name not in target_map or callable(node): # no default value or failed function
                 raise Exception(f'Failed map node #{i}: {repx(node)}', e)
             self.use_default = True
     def __desc__(self):
