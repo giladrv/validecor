@@ -7,6 +7,7 @@ from typing import Any, Callable, Type
 from .core import Map, SimpleValidator, Validator, repx
 
 RX_UUID_V4 = r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}'
+RX_ASCII_PRINT = r'^[\x20-\x7E]*$'
 SPECIAL_CHARS = re.escape(''' !"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~''')
 
 class Between(SimpleValidator):
@@ -265,13 +266,18 @@ class MetaDict(SimpleValidator):
     def __call__(self, arg):
         if not isinstance(arg, dict):
             raise ValueError(f'Invalid type: {type(arg)}')
+        total_bytes = 0
         for key, val in arg.items():
-            if not isinstance(key, str):
-                raise ValueError(f'Invalid key type: {key} ({type(arg)})')
-            if not isinstance(val, str):
-                raise ValueError(f'Invalid value type: {key}: {val} ({type(arg)})')
+            if not isinstance(key, str) or re.fullmatch(RX_ASCII_PRINT, key) is None:
+                raise ValueError(f'Invalid key: {key} ({type(key)})')
+            total_bytes += len(key)
+            if not isinstance(val, str) or re.fullmatch(RX_ASCII_PRINT, val) is None:
+                raise ValueError(f'Invalid value: {key}: {val} ({type(val)})')
+            total_bytes += len(val)
+        if total_bytes > 2048:
+            raise ValueError(f'Metadata too large: {total_bytes} (max 2KB)')
     def __desc__(self):
-        return f'Must be a dictionary of strings'
+        return f'Must be a dictionary of US-ASCII strings'
     def __repr__(self):
         return f'{type(self).__name__}()'
 
