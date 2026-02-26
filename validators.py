@@ -258,6 +258,23 @@ class ListOf(SimpleValidator):
     def format_values(self):
         return ','.join(repx(tv) for tv in self.target_values)
 
+class MetaDict(SimpleValidator):
+    """
+    Ensure the argument is a valid metadata dictionary mapping strings to strings.
+    """
+    def __call__(self, arg):
+        if not isinstance(arg, dict):
+            raise ValueError(f'Invalid type: {type(arg)}')
+        for key, val in arg.items():
+            if not isinstance(key, str):
+                raise ValueError(f'Invalid key type: {key} ({type(arg)})')
+            if not isinstance(val, str):
+                raise ValueError(f'Invalid value type: {key}: {val} ({type(arg)})')
+    def __desc__(self):
+        return f'Must be a dictionary of strings'
+    def __repr__(self):
+        return f'{type(self).__name__}()'
+
 class Not(SimpleValidator):
     """
     Check that the argument is not valid according to the target validator.
