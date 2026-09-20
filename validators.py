@@ -517,26 +517,34 @@ class ValueOrRange(SimpleValidator):
         details = f'{repx(self.lo)},{repx(self.hi)}'
         return f'{name}({details})'
 
-class MapApiGatewayBody(Map):
-    def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'body', json.loads, *nodes, hidden = 3)
+class MapEvent(Map):
+    def __init__(self, *nodes: int | str | Callable[..., Any], hidden: int = 1):
+        super().__init__('event', *nodes, hidden = hidden)
 
-class MapApiGatewayClaims(Map):
-    def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'requestContext', 'authorizer', 'claims', *nodes, hidden = 4)
+class MapRequestContext(MapEvent):
+    def __init__(self, *nodes: int | str | Callable[..., Any], hidden: int = 2):
+        super().__init__('requestContext', *nodes, hidden = hidden)
 
-class MapApiGatewayHeaders(Map):
+class MapApiGatewayBody(MapEvent):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'headers', *nodes, hidden = 2)
+        super().__init__('body', json.loads, *nodes, hidden = 3)
 
-class MapApiGatewayPath(Map):
+class MapApiGatewayClaims(MapRequestContext):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'pathParameters', *nodes, hidden = 2)
+        super().__init__('authorizer', 'claims', *nodes, hidden = 4)
 
-class MapApiGatewayQuery(Map):
+class MapApiGatewayHeaders(MapEvent):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'queryStringParameters', *nodes, hidden = 2)
+        super().__init__('headers', *nodes, hidden = 2)
 
-class MapApiGatewayWebSocketAuth(Map):
+class MapApiGatewayPath(MapEvent):
     def __init__(self, *nodes: int | str | Callable[..., Any]):
-        super().__init__('event', 'requestContext', 'authorizer', *nodes, hidden = 3)
+        super().__init__('pathParameters', *nodes, hidden = 2)
+
+class MapApiGatewayQuery(MapEvent):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('queryStringParameters', *nodes, hidden = 2)
+
+class MapApiGatewayWebSocketAuth(MapRequestContext):
+    def __init__(self, *nodes: int | str | Callable[..., Any]):
+        super().__init__('authorizer', *nodes, hidden = 3)
