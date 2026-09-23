@@ -106,6 +106,8 @@ def default_err_hook(__err__: Exception, *__args__, **__kwargs__): raise
 
 def default_map_hook(res): return res
 
+def default_pos_hook(*__args__, **__kwargs__): pass
+
 def get_arg_map(spec: FullArgSpec, args: tuple, kwargs: Dict[str, Any]):
     arg_map = dict(zip(spec.args, args))
     if (i := len(args) - len(spec.args)) < 0:
@@ -134,7 +136,9 @@ def validecor(
         pre_hook: Callable = default_log_hook,
         val_hook: Callable = default_val_hook,
         err_hook: Callable = default_err_hook,
-        map_hook: Callable = default_map_hook):
+        map_hook: Callable = default_map_hook,
+        pos_hook: Callable = default_pos_hook,
+    ):
     """
     ValiDecor is a decorator for annotating validations on function inputs.
 
@@ -177,44 +181,47 @@ def validecor(
         def wrapper(*source_args, **source_kwargs):
             if (res := pre_hook(*source_args, **source_kwargs)) is not CONTINUE:
                 return res
-            cache = {}
-            source_map = get_arg_map(source_spec or target_spec, source_args, source_kwargs)
-            target_map = get_arg_def(target_spec) if source_fun is not None else source_map
-            for annotated_name, annotation in target_spec.annotations.items():
-                if get_origin(annotation) is Annotated:
-                    annotated_type = annotation.__origin__
-                    for validator in annotation.__metadata__:
-                        if not isinstance(validator, Validator):
-                            raise Exception('Invalid annotation - only ValiDecor instances are allowed')
-                        validator.annotated_name = annotated_name
-                        validator.annotated_type = annotated_type
-                        validator.cache = cache
-                        try:
-                            if isinstance(validator, SimpleValidator):
-                                validator(target_map[annotated_name])
-                            elif isinstance(validator, ExtendedValidator):
-                                validator(source_map, target_map)
-                            else:
-                                pass
-                        except Exception as e:
-                            return val_hook(e, validator)
-                        if validator.use_default:
-                            break
-            if source_spec is None:
-                target_args = source_args
-                target_kwargs = source_kwargs
-            else:
-                target_args = [ target_map[arg_name] for arg_name in target_spec.args ]
-                if target_spec.varargs is not None:
-                    target_args.extend(target_map[target_spec.varargs])
-                target_kwargs = { arg_name: target_map[arg_name] for arg_name in target_spec.kwonlyargs }
-                if target_spec.varkw is not None:
-                    target_kwargs.update(target_map[target_spec.varkw])
             try:
-                res = target_fun(*target_args, **target_kwargs)
-            except Exception as e:
-                return err_hook(e, *target_args, **target_kwargs)
-            else:
-                return map_hook(res)
+                cache = {}
+                source_map = get_arg_map(source_spec or target_spec, source_args, source_kwargs)
+                target_map = get_arg_def(target_spec) if source_fun is not None else source_map
+                for annotated_name, annotation in target_spec.annotations.items():
+                    if get_origin(annotation) is Annotated:
+                        annotated_type = annotation.__origin__
+                        for validator in annotation.__metadata__:
+                            if not isinstance(validator, Validator):
+                                raise Exception('Invalid annotation - only ValiDecor instances are allowed')
+                            validator.annotated_name = annotated_name
+                            validator.annotated_type = annotated_type
+                            validator.cache = cache
+                            try:
+                                if isinstance(validator, SimpleValidator):
+                                    validator(target_map[annotated_name])
+                                elif isinstance(validator, ExtendedValidator):
+                                    validator(source_map, target_map)
+                                else:
+                                    pass
+                            except Exception as e:
+                                return val_hook(e, validator)
+                            if validator.use_default:
+                                break
+                if source_spec is None:
+                    target_args = source_args
+                    target_kwargs = source_kwargs
+                else:
+                    target_args = [ target_map[arg_name] for arg_name in target_spec.args ]
+                    if target_spec.varargs is not None:
+                        target_args.extend(target_map[target_spec.varargs])
+                    target_kwargs = { arg_name: target_map[arg_name] for arg_name in target_spec.kwonlyargs }
+                    if target_spec.varkw is not None:
+                        target_kwargs.update(target_map[target_spec.varkw])
+                try:
+                    res = target_fun(*target_args, **target_kwargs)
+                except Exception as e:
+                    return err_hook(e, *target_args, **target_kwargs)
+                else:
+                    return map_hook(res)
+            finally:
+                pos_hook(*source_args, **source_kwargs)
         return wrapper
     return decorator
